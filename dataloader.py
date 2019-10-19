@@ -20,17 +20,18 @@ class SegmentationDataset(Dataset):
         self.preprocessing = preprocessing
 
     def __getitem__(self, idx):
-        id = self.ids(idx)
+        id = self.ids[idx]
         image = get_img(id)
         mask = get_mask(id)
-        augmented = self.transform(image=image, mask=mask)
+        augmented = self.transforms(image=image, mask=mask)
         image = augmented['image']
         mask = augmented['mask']
         if self.preprocessing:
             pre = self.preprocessing(image=image, mask=mask)
             image = pre['image']
             mask = pre['mask']
-        return np.transpose(image, [2, 0, 1]), np.transpose(mask, [2, 0, 1])
+
+        return image, mask
 
     def __len__(self):
         return len(self.ids)

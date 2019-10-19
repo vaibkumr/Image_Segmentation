@@ -114,11 +114,12 @@ if __name__ == "__main__":
         {'params': model.decoder.parameters(), 'lr': lrd},
         {'params': model.encoder.parameters(), 'lr': lre},
     ])
-    
+
     model.to(device)
     scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=2)
     criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
     runner = SupervisedRunner()
+
     # Train
     runner.train(
         model=model,
