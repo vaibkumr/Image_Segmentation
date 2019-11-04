@@ -24,14 +24,12 @@ from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CosineAnnealingL
 import albumentations as albu
 import configparser
 import argparse
-import wandb
 
 # Catalyst is amazing.
 from catalyst.data import Augmentor
 from catalyst.dl import utils
 from catalyst.data.reader import ImageReader, ScalarReader, ReaderCompose, LambdaReader
-# from catalyst.dl.runner import SupervisedRunner
-from catalyst.dl.runner import SupervisedWandbRunner as SupervisedRunner
+from catalyst.dl.runner import SupervisedRunner
 from catalyst.contrib.models.segmentation import Unet
 from catalyst.dl.callbacks import DiceCallback, EarlyStoppingCallback, InferCallback, CheckpointCallback
 
@@ -40,7 +38,6 @@ import segmentation_models_pytorch as smp
 from dataloader import SegmentationDataset, SegmentationDatasetTest
 from augmentations import get_training_augmentation, get_validation_augmentation, get_preprocessing
 
-from metric import BCEDiceLoss, DiceLoss
 device=torch.device('cuda')
 
 
@@ -96,8 +93,6 @@ def get_model(encoder='resnet18', classes=4):
 
 
 if __name__ == "__main__":
-    wandb.init(project="segmentation-phase2")
-
     config = configparser.ConfigParser()
     config.read('configs/config.ini')
     conf = config['DEFAULT']
@@ -113,7 +108,6 @@ if __name__ == "__main__":
 
     train_ids, valid_ids = get_ids()
     model, preprocessing_fn = get_model(encoder)
-    wandb.watch(model)
     loaders = get_loaders(bs, num_workers, preprocessing_fn)
 
     optimizer = torch.optim.Adam([
@@ -122,10 +116,8 @@ if __name__ == "__main__":
     ])
 
     model.to(device)
-    scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=3)
-    # criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
-    criterion = BCEDiceLoss()
-    # criterion = DiceLoss() #Try this too
+    scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=2)
+    criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
     runner = SupervisedRunner()
 
     # Train

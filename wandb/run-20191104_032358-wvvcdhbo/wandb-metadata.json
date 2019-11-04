@@ -1,0 +1,25 @@
+{
+    "root": "/home/timetraveller/Documents/Projects/kaggle-satellite_cloud_segmentation",
+    "program": "train.py",
+    "git": {
+        "remote": "https://github.com/TimeTraveller-San/Image_Segmentation",
+        "commit": "ac8505f2c49816f6fc13d1117c3745df426a9be0"
+    },
+    "email": "anonymous.yolo.wtf@gmail.com",
+    "startedAt": "2019-11-04T03:23:58.722093",
+    "host": "timemachine",
+    "username": "timetraveller",
+    "executable": "/home/timetraveller/miniconda3/bin/python",
+    "os": "Linux-5.2.13-arch1-1-ARCH-x86_64-with-arch",
+    "python": "3.7.3",
+    "gpu": "GeForce GTX 1060 6GB",
+    "gpu_count": 1,
+    "cpu_count": 8,
+    "args": [],
+    "state": "killed",
+    "jobType": null,
+    "mode": "run",
+    "project": "segmentation-phase2",
+    "heartbeatAt": "2019-11-04T03:24:17.888847",
+    "exitcode": 255
+}
