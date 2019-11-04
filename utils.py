@@ -86,6 +86,6 @@ def get_model(encoder='resnet18', type='unet',
         )
     else:
         raise "weird architecture"
-    print(f"Training on {type} architecture with {encoder} encoder")    
+    print(f"Training on {type} architecture with {encoder} encoder")
     preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, encoder_weights)
     return model, preprocessing_fn

@@ -45,7 +45,17 @@ from augmentations import get_training_augmentation, get_validation_augmentation
 from metric import BCEDiceLoss, DiceLoss
 from utils import *
 device=torch.device('cuda')
-seed_everything(42)
+def seed_everything(seed=42):
+    """
+    42 is the answer to everything.
+    """
+    random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+seed_everything(42)    
 
 
 def dice(img1, img2):
