@@ -2,3 +2,6 @@ input/
 __pycache__/
 logs/
 wandb/
+models/
+classification/__pycache__/
+classification/.*
