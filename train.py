@@ -75,7 +75,7 @@ def get_ids(train_ids_file='train_ids.pkl', valid_ids_file='valid_ids.pkl'):
 
     with open(valid_ids_file, 'rb') as handle:
         valid_ids = pickle.load(handle)
-        
+
     return train_ids, valid_ids
 
 def get_loaders(bs=32, num_workers=4, preprocessing_fn=None):
