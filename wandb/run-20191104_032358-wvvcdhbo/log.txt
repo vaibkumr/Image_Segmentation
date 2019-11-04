@@ -1,3 +1,0 @@
-[2019-11-04 02:41:50,918] 
-0/20 * Epoch 0 (train): _base/lr=0.0010 | _base/momentum=0.9000 | _timers/_fps=10.5182 | _timers/batch_time=0.2011 | _timers/data_time=0.1715 | _timers/model_time=0.0295 | dice=0.3248 | loss=1.0584
-0/20 * Epoch 0 (valid): _base/lr=0.0010 | _base/momentum=0.9000 | _timers/_fps=10.2111 | _timers/batch_time=0.2035 | _timers/data_time=0.1756 | _timers/model_time=0.0279 | dice=0.4458 | loss=0.8863
