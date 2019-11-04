@@ -44,6 +44,7 @@ from augmentations import get_training_augmentation, get_validation_augmentation
 from metric import BCEDiceLoss, DiceLoss
 from utils import *
 device=torch.device('cuda')
+seed_everything(42)
 
 
 def dice(img1, img2):
