@@ -24,9 +24,30 @@ def dice(pr, gt, eps=1e-9, threshold=None, activation='sigmoid'):
     sum2 = torch.sum(gt)
 
     score = (2.0 * intersection + eps) / (sum1 + sum2 + eps)
-
-
     return score
+
+def dice_kaggle(pr, gt, eps=1e-9, threshold=None, activation='sigmoid'):
+    if activation is None or activation == "none":
+        activation_fn = lambda x: x
+    elif activation == "sigmoid":
+        activation_fn = torch.nn.Sigmoid()
+    elif activation == "softmax2d":
+        activation_fn = torch.nn.Softmax2d()
+    else:
+        raise NotImplementedError(
+            "Activation implemented for sigmoid and softmax2d"
+        )
+
+    pr = activation_fn(pr)
+
+    if threshold is not None:
+        pr = (pr > threshold).float()
+
+    intersection = torch.sum(gt*pr, axis=[0, 2, 3])
+    sum1 = torch.sum(pr, axis=[0, 2, 3])
+    sum2 = torch.sum(gt, axis=[0, 2, 3])
+    score = (2.0 * intersection + eps) / (sum1 + sum2 + eps)
+    return torch.mean(score)
 
 class DiceLoss(nn.Module):
     __name__ = 'dice_loss'
@@ -37,7 +58,7 @@ class DiceLoss(nn.Module):
         self.eps = eps
 
     def forward(self, y_pr, y_gt):
-        return dice(y_pr, y_gt, eps=self.eps,
+        return 1-dice_kaggle(y_pr, y_gt, eps=self.eps,
                     threshold=None, activation=self.activation)
 
 

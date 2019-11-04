@@ -6,6 +6,7 @@ import seaborn
 import time
 import os
 import tqdm as tqdm
+import segmentation_models_pytorch as smp
 
 def get_img(fname, folder="input/train_images_525/train_images_525"):
     img = cv2.imread(os.path.join(folder, fname))
@@ -51,3 +52,40 @@ def make_mask(df: pd.DataFrame, image_name: str='img.jpg', shape: tuple = (1400,
             mask = rle_decode(label)
             masks[:, :, idx] = mask
     return masks
+
+def get_model(encoder='resnet18', type='unet',
+                    encoder_weights = 'imagenet', classes=4):
+
+    if type == 'unet':
+        model = smp.Unet(
+            encoder_name=encoder,
+            encoder_weights=encoder_weights,
+            classes=classes,
+            activation=None,
+        )
+    elif type == 'fpn':
+        model = smp.FPN(
+            encoder_name=encoder,
+            encoder_weights=encoder_weights,
+            classes=classes,
+            activation=None,
+        )
+    elif type == 'pspnet':
+        model = smp.PSPNet(
+            encoder_name=encoder,
+            encoder_weights=encoder_weights,
+            classes=classes,
+            activation=None,
+        )
+    elif type == 'linknet':
+        model = smp.Linknet(
+            encoder_name=encoder,
+            encoder_weights=encoder_weights,
+            classes=classes,
+            activation=None,
+        )
+    else:
+        raise "weird architecture"
+    print(f"Training on {type} architecture with {encoder} encoder")    
+    preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, encoder_weights)
+    return model, preprocessing_fn
