@@ -38,6 +38,7 @@ import segmentation_models_pytorch as smp
 from dataloader import SegmentationDataset, SegmentationDatasetTest
 from augmentations import get_training_augmentation, get_validation_augmentation, get_preprocessing
 
+from metric import BCEDiceLoss, DiceLoss
 device=torch.device('cuda')
 
 
@@ -116,8 +117,10 @@ if __name__ == "__main__":
     ])
 
     model.to(device)
-    scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=2)
-    criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
+    scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=3)
+    # criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
+    criterion = BCEDiceLoss()
+    # criterion = DiceLoss() #Try this too
     runner = SupervisedRunner()
 
     # Train
@@ -127,7 +130,7 @@ if __name__ == "__main__":
         optimizer=optimizer,
         scheduler=scheduler,
         loaders=loaders,
-        callbacks=[DiceCallback(),
+        callbacks=[
                    EarlyStoppingCallback(patience=5, min_delta=0.001)
                    ],
         logdir=logdir,
