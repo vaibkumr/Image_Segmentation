@@ -144,19 +144,20 @@ if __name__ == "__main__":
     optimizer = optim.Adam(model.parameters(), lr=lr1)
     # optimizer = RAdam(model.parameters(), lr=lr1)
     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5,
-                    patience=3)
+                    patience=2)
 
     model = train(num_epochs, model, optimizer, scheduler,
                     train_loader, val_loader, patience)
 
-    PATH = "../models/classification/freezed.pth"
+    PATH = "../models/classification/freezed_Effnet_b2.pth"
     torch.save(model.state_dict(), PATH)
 
     model.unfreeze()
     optimizer = optim.Adam(model.parameters(), lr=lr2)
     # optimizer = RAdam(model.parameters(), lr=lr2)
+    train_loader, val_loader = get_data_loaders(bs=bs//2)
     model = train(num_epochs, model, optimizer, scheduler,
                     train_loader, val_loader, patience)
 
-    PATH = "../models/classification/unfreezed.pth"
+    PATH = "../models/classification/unfreezed_Effnet_b2.pth"
     torch.save(model.state_dict(), PATH)

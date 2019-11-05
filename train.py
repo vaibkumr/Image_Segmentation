@@ -55,7 +55,7 @@ def seed_everything(seed=42):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
-seed_everything(42)    
+seed_everything(42)
 
 
 def dice(img1, img2):
@@ -139,9 +139,9 @@ if __name__ == "__main__":
 
     model.to(device)
     scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=2)
-    criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
+    # criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
     # criterion = BCEDiceLoss()
-    # criterion = DiceLoss() #Try this too
+    criterion = DiceLoss(eps=1.) #Try this too
     runner = SupervisedRunner()
 
     # Train

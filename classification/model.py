@@ -31,7 +31,7 @@ class Effnet(nn.Module):
 
 
 
-def get_model_inet(num_classes, pretrained=True, freeze=True):
+def get_inet_model(num_classes, pretrained=True, freeze=True):
     model = models.inception_v3(pretrained=pretrained)
 
     if freeze:
