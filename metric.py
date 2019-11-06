@@ -65,11 +65,11 @@ class DiceLoss(nn.Module):
 class BCEDiceLoss(DiceLoss):
     __name__ = 'bce_dice_loss'
 
-    def __init__(self, eps=1e-9, activation='sigmoid'):
+    def __init__(self, eps=1e-7, activation='sigmoid'):
         super().__init__(eps, activation)
-        self.bce = nn.BCEWithLogitsLoss()
+        self.bce = nn.BCEWithLogitsLoss(reduction='mean')
 
     def forward(self, y_pr, y_gt):
         dice = super().forward(y_pr, y_gt)
         bce = self.bce(y_pr, y_gt)
-        return 0.5*dice + 0.5*bce
+        return dice + bce

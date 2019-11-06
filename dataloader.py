@@ -16,7 +16,7 @@ saved the images. I used someone else's code to decode RLE into masks.
 class SegmentationDataset(Dataset):
     def __init__(self, ids, transforms, preprocessing=False,
             img_db="input/train_images_525/train_images_525",
-            mask_db="input/mask", npy=False):
+            mask_db="input/train_masks_640", npy=False):
         self.ids = ids
         self.transforms = transforms
         self.preprocessing = preprocessing
@@ -47,7 +47,7 @@ class SegmentationDataset(Dataset):
 class SegmentationDataset_withid(Dataset):
     def __init__(self, ids, transforms, preprocessing=False,
             img_db="input/train_images_525/train_images_525",
-            mask_db="input/mask"):
+            mask_db="input/train_masks_640"):
         self.ids = ids
         self.transforms = transforms
         self.preprocessing = preprocessing

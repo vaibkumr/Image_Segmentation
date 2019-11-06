@@ -91,7 +91,8 @@ def get_ids(train_ids_file='train_ids.pkl', valid_ids_file='valid_ids.pkl'):
     return train_ids, valid_ids
 
 def get_loaders(bs=32, num_workers=4, preprocessing_fn=None,
-            img_db="input/train_images_640/", mask_db="input/mask", npy=True):
+            img_db="input/train_images_640/", mask_db="input/train_masks_640/",
+            npy=True):
         train_ids, valid_ids = get_ids()
 
         train_dataset = SegmentationDataset(ids=train_ids,
@@ -146,10 +147,11 @@ if __name__ == "__main__":
     ])
 
     model.to(device)
-    scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=s_patience)
+    # scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=s_patience)
+    scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     # criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
-    # criterion = BCEDiceLoss()
-    criterion = DiceLoss(eps=1.) #Try this too
+    criterion = BCEDiceLoss()
+    # criterion = DiceLoss(eps=1.) #Try this too
     runner = SupervisedRunner()
 
     # Train
