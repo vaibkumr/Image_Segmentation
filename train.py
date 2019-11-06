@@ -90,14 +90,20 @@ def get_ids(train_ids_file='train_ids.pkl', valid_ids_file='valid_ids.pkl'):
 
     return train_ids, valid_ids
 
-def get_loaders(bs=32, num_workers=4, preprocessing_fn=None):
+def get_loaders(bs=32, num_workers=4, preprocessing_fn=None,
+            img_db="input/train_images_640/", mask_db="input/mask", npy=True):
         train_ids, valid_ids = get_ids()
+
         train_dataset = SegmentationDataset(ids=train_ids,
                     transforms=get_training_augmentation(),
-                    preprocessing=get_preprocessing(preprocessing_fn))
+                    preprocessing=get_preprocessing(preprocessing_fn),
+                    img_db=img_db,
+                    mask_db=mask_db, npy=npy)
         valid_dataset = SegmentationDataset(ids=valid_ids,
                     transforms=get_validation_augmentation(),
-                    preprocessing=get_preprocessing(preprocessing_fn))
+                    preprocessing=get_preprocessing(preprocessing_fn),
+                    img_db=img_db,
+                    mask_db=mask_db, npy=npy)
 
         train_loader = DataLoader(train_dataset, batch_size=bs,
             shuffle=True, num_workers=num_workers)
@@ -126,6 +132,8 @@ if __name__ == "__main__":
     encoder = conf.get('encoder')
     logdir = conf.get('logdir')
     bs = conf.getint('bs')
+    s_patience = conf.getint('s_patience')
+    train_patience = conf.getint('train_patience')
 
 
     model, preprocessing_fn = get_model(encoder)
@@ -138,7 +146,7 @@ if __name__ == "__main__":
     ])
 
     model.to(device)
-    scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=2)
+    scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=s_patience)
     # criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
     # criterion = BCEDiceLoss()
     criterion = DiceLoss(eps=1.) #Try this too
@@ -152,7 +160,8 @@ if __name__ == "__main__":
         scheduler=scheduler,
         loaders=loaders,
         callbacks=[DiceCallback(),
-                   EarlyStoppingCallback(patience=3, min_delta=0.001)
+                   EarlyStoppingCallback(patience=train_patience,
+                                        min_delta=0.001)
                    ],
         logdir=logdir,
         num_epochs=epochs,

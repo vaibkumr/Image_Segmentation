@@ -5,3 +5,7 @@ wandb/
 models/
 classification/__pycache__/
 classification/.*
+*.pth
+notebooks/Data
+notebooks/__p*
+

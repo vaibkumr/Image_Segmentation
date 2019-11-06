@@ -8,7 +8,11 @@ import os
 import tqdm as tqdm
 import segmentation_models_pytorch as smp
 
-def get_img(fname, folder="input/train_images_525/train_images_525"):
+# This place contains a lot of stolen code.
+
+def get_img(fname, folder="input/train_images_525/train_images_525", npy=False):
+    if npy:
+        return np.load(os.path.join(folder, fname+'.npy'))
     img = cv2.imread(os.path.join(folder, fname))
     return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
@@ -55,7 +59,7 @@ def make_mask(df: pd.DataFrame, image_name: str='img.jpg', shape: tuple = (1400,
 
 def get_model(encoder='resnet18', type='unet',
                     encoder_weights = 'imagenet', classes=4):
-
+    # My own simple wrapper around smp
     if type == 'unet':
         model = smp.Unet(
             encoder_name=encoder,
@@ -89,3 +93,43 @@ def get_model(encoder='resnet18', type='unet',
     print(f"Training on {type} architecture with {encoder} encoder")
     preprocessing_fn = smp.encoders.get_preprocessing_fn(encoder, encoder_weights)
     return model, preprocessing_fn
+
+
+def visualize_with_raw(image, mask, original_image=None, original_mask=None,
+                    raw_image=None, raw_mask=None):
+    """
+    Plot image and masks.
+    If two pairs of images and masks are passes, show both.
+    Source: https://www.kaggle.com/artgor/segmentation-in-pytorch-using-convenient-tools
+    """
+
+    fontsize = 14
+    class_dict = {0: 'Fish', 1: 'Flower', 2: 'Gravel', 3: 'Sugar'}
+
+    f, ax = plt.subplots(3, 5, figsize=(24, 12))
+
+    ax[0, 0].imshow(original_image)
+    ax[0, 0].set_title('Original image', fontsize=fontsize)
+
+    for i in range(4):
+        ax[0, i + 1].imshow(original_mask[:, :, i])
+        ax[0, i + 1].set_title(f'Original mask {class_dict[i]}',
+                                fontsize=fontsize)
+
+
+    ax[1, 0].imshow(raw_image)
+    ax[1, 0].set_title('Original image', fontsize=fontsize)
+
+    for i in range(4):
+        ax[1, i + 1].imshow(raw_mask[:, :, i])
+        ax[1, i + 1].set_title(f'Raw predicted mask {class_dict[i]}',
+                                fontsize=fontsize)
+
+    ax[2, 0].imshow(image)
+    ax[2, 0].set_title('Transformed image', fontsize=fontsize)
+
+
+    for i in range(4):
+        ax[2, i + 1].imshow(mask[:, :, i])
+        ax[2, i + 1].set_title(f'Predicted mask with processing {class_dict[i]}',
+                                fontsize=fontsize)
