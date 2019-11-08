@@ -57,6 +57,18 @@ def make_mask(df: pd.DataFrame, image_name: str='img.jpg', shape: tuple = (1400,
             masks[:, :, idx] = mask
     return masks
 
+def mask2rle(img):
+    '''
+    Convert mask to rle.
+    img: numpy array, 1 - mask, 0 - background
+    Returns run length as string formated
+    '''
+    pixels= img.T.flatten()
+    pixels = np.concatenate([[0], pixels, [0]])
+    runs = np.where(pixels[1:] != pixels[:-1])[0] + 1
+    runs[1::2] -= runs[::2]
+    return ' '.join(str(x) for x in runs)    
+
 def get_model(encoder='resnet18', type='unet',
                     encoder_weights = 'imagenet', classes=4):
     # My own simple wrapper around smp

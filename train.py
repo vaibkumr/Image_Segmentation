@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import argparse
 
 from sklearn.model_selection import KFold, train_test_split
 
@@ -120,7 +121,19 @@ def get_loaders(bs=32, num_workers=4, preprocessing_fn=None,
 
 
 if __name__ == "__main__":
-    wandb.init(project="segmentation-phase2")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--encoder", "-e", default="efficientnet-b2",
+                        help="encoder model name")
+    parser.add_argument("--arch", "-a", default="unet",
+                        help="architecture for segmentation")
+    parser.add_argument("--wandb", "-w", default="segmentation-phase2",
+                        help="wandb project name")
+    args = parser.parse_args()
+    # encoder = args.encoder
+    # arch = args.arch
+    project = args.wandb
+
+    wandb.init(project=project)
 
     config = configparser.ConfigParser()
     config.read('configs/config.ini')
@@ -130,14 +143,14 @@ if __name__ == "__main__":
     lre = conf.getfloat('lre')
     epochs = conf.getint('epochs')
     num_workers = conf.getint('num_workers')
-    encoder = conf.get('encoder')
-    logdir = conf.get('logdir')
     bs = conf.getint('bs')
     s_patience = conf.getint('s_patience')
     train_patience = conf.getint('train_patience')
+    arch = conf.get('arch')
+    encoder = conf.get('encoder')
+    logdir = f"./logs/{arch}_{encoder}"
 
-
-    model, preprocessing_fn = get_model(encoder)
+    model, preprocessing_fn = get_model(encoder, type=arch)
     wandb.watch(model)
     loaders = get_loaders(bs, num_workers, preprocessing_fn)
 
@@ -147,8 +160,8 @@ if __name__ == "__main__":
     ])
 
     model.to(device)
-    # scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=s_patience)
-    scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
+    scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=s_patience)
+    # scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     # criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
     criterion = BCEDiceLoss()
     # criterion = DiceLoss(eps=1.) #Try this too
