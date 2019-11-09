@@ -125,7 +125,7 @@ loaders = {"test": test_loader}
 
 encoded_pixels = []
 image_id = 0
-size = (350, 525)
+size = (350, 525) #Required output size by kaggle
 for i, test_batch in enumerate(tqdm.tqdm(loaders['test'])):
     runner_out = runner.predict_batch({"features": test_batch.cuda()})['logits']
     for i, batch in enumerate(runner_out):
@@ -148,7 +148,7 @@ sub['EncodedPixels'] = encoded_pixels
 
 # Use classifer
 import pickle
-with open('Data/list.pkl', 'rb') as handle:
+with open('list.pkl', 'rb') as handle:
     image_labels_empty = pickle.load(handle)
 
 predictions_nonempty = set(sub.loc[~sub['EncodedPixels'].isnull(), 'Image_Label'].values)

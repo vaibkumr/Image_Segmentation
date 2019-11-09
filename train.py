@@ -97,7 +97,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", "-c", default="configs/config.ini",
                         help="config file for training hyperparameters")
-    parser.add_argument("--wandb", "-w", default="segmentation-phase2",
+    parser.add_argument("--wandb", "-w", default="segmentation-phase3",
                         help="wandb project name")
     args = parser.parse_args()
     project = args.wandb

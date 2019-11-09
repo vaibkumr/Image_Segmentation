@@ -116,7 +116,7 @@ loaders['valid'] = valid_loader
 
 print("Learning threshold and min area")
 valid_masks = []
-LIMIT = 700
+LIMIT = 800
 size = (320, 480)
 probabilities = np.zeros((int(LIMIT*4), 320, 480)) #HARDCODED FOR NOW
 for i, (batch, output) in enumerate(tqdm.tqdm(zip(valid_dataset, runner.callbacks[0].predictions["logits"]))):
@@ -188,6 +188,6 @@ for phase in ['train', 'valid']:
     diceScore[phase] = running_dice
 
 print(f"\n\nDicescore: {diceScore}\n\n")
-with open("train_test_loss.txt", 'w+') as handle:
+with open(f"{logdir}/train_test_loss.txt", 'w+') as handle:
     text = f"Train: {diceScore['train']}\nTest: {diceScore['valid']}"
     handle.write(text)
