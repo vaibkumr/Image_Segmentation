@@ -183,9 +183,9 @@ for phase in ['train', 'valid']:
                 #     probability = cv2.resize(probability, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
                 predict, num_predict = post_process(sigmoid(probability),
                             class_params[image_id % 4][0], class_params[image_id % 4][1], size=size)
-                running_dice += dice(predict, mask[j,:,:])/image_id
+                running_dice += dice(predict, mask[j,:,:])
                 image_id += 1
-    diceScore[phase] = running_dice
+    diceScore[phase] = running_dice/image_id
 
 print(f"\n\nDicescore: {diceScore}\n\n")
 with open(f"{logdir}/train_test_loss.txt", 'w+') as handle:
