@@ -119,14 +119,15 @@ loaders['valid'] = valid_loader
 
 
 
+size = (320, 480)
 if load_params:
+    print(">>>> Loading params")
     with open(output_name+"_params.pkl", 'rb') as handle:
         class_params = pickle.load(handle)
 else:
     print("Learning threshold and min area")
     valid_masks = []
     LIMIT = 800
-    size = (320, 480)
     probabilities = np.zeros((int(LIMIT*4), 320, 480)) #HARDCODED FOR NOW
     for i, (batch, output) in enumerate(tqdm.tqdm(zip(valid_dataset, runner.callbacks[0].predictions["logits"]))):
         if i >= LIMIT:
