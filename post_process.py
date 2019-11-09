@@ -87,7 +87,7 @@ train_ids, valid_ids = get_ids()
 sigmoid = lambda x: 1 / (1 + np.exp(-x))
 
 
-bs = 8
+bs = 4
 num_workers = 0
 # encoder = 'efficientnet-b4'
 # arch = 'linknet'
@@ -137,25 +137,21 @@ class_params = {}
 for class_id in range(4):
     print(class_id)
     attempts = []
-    # for t in tqdm.tqdm(range(0, 100, 5)):
-    for t in tqdm.tqdm(range(0, 10, 5)):
+    for t in tqdm.tqdm(range(20, 100, 5)):
         t /= 100
-        # for ms in [100, 5000, 10000, 15000, 20000, 22000, 25000]:
-        for ms in [100]:
+        for ms in [5000, 10000, 15000, 20000, 25000, 27000]:
             masks = []
             for i in range(class_id, len(probabilities), 4):
                 probability = probabilities[i]
                 predict, num_predict = post_process(sigmoid(probability), t,
                                                         ms, size=size)
                 masks.append(predict)
-
             d = []
             for i, j in zip(masks, valid_masks[class_id::4]):
                 if (i.sum() == 0) & (j.sum() == 0):
                     d.append(1)
                 else:
                     d.append(dice(i, j))
-
             attempts.append((t, ms, np.mean(d)))
 
     attempts_df = pd.DataFrame(attempts, columns=['threshold', 'size', 'dice'])

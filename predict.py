@@ -63,7 +63,7 @@ def get_loaders(bs=32, num_workers=4, preprocessing_fn=None,
             shuffle=False, num_workers=num_workers)
 
         loaders = {
-            "infer": train_loader,
+            "infer": valid_loader
         }
         return loaders
 
@@ -80,7 +80,7 @@ output_name = f"{logdir}/{arch}_{encoder}" #will be .pkl and .csv later
 
 sigmoid = lambda x: 1 / (1 + np.exp(-x))
 
-bs = 8
+bs = 4 #FFFFFSSSS LARGE Bs just doesnt work.. always CUDA out of memory for me :/
 num_workers = 0
 # encoder = 'efficientnet-b4'
 # arch = 'linknet'
@@ -113,8 +113,6 @@ runner.infer(
     ],
 )
 
-
-
 test_dataset = SegmentationDatasetTest(test_ids,
                                         transforms=get_test_augmentation(),
                                         preprocessing=get_preprocessing(preprocessing_fn),
@@ -127,14 +125,18 @@ loaders = {"test": test_loader}
 
 encoded_pixels = []
 image_id = 0
+size = (350, 525)
 for i, test_batch in enumerate(tqdm.tqdm(loaders['test'])):
     runner_out = runner.predict_batch({"features": test_batch.cuda()})['logits']
     for i, batch in enumerate(runner_out):
         for probability in batch:
             probability = probability.cpu().detach().numpy()
             if probability.shape != (350, 525):
-                probability = cv2.resize(probability, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
-            predict, num_predict = post_process(sigmoid(probability), class_params[image_id % 4][0], class_params[image_id % 4][1])
+                probability = cv2.resize(probability, dsize=size, interpolation=cv2.INTER_LINEAR)
+            predict, num_predict = post_process(sigmoid(probability),
+                                                class_params[image_id % 4][0],
+                                                class_params[image_id % 4][1],
+                                                size=size)
             if num_predict == 0:
                 encoded_pixels.append('')
             else:
@@ -148,6 +150,7 @@ sub['EncodedPixels'] = encoded_pixels
 import pickle
 with open('Data/list.pkl', 'rb') as handle:
     image_labels_empty = pickle.load(handle)
+
 predictions_nonempty = set(sub.loc[~sub['EncodedPixels'].isnull(), 'Image_Label'].values)
 print(f'{len(image_labels_empty.intersection(predictions_nonempty))} masks would be removed')
 
