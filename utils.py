@@ -50,7 +50,7 @@ def get_ids(train_ids_file='train_ids.pkl', valid_ids_file='valid_ids.pkl'):
     return train_ids, valid_ids
 
 
-def post_process(probability, threshold, min_size):
+def post_process(probability, threshold, min_size, size=(350, 525)):
     """
     Post processing of each predicted mask, components with lesser number of pixels
     than `min_size` are ignored
@@ -58,7 +58,7 @@ def post_process(probability, threshold, min_size):
     # don't remember where I saw it
     mask = cv2.threshold(probability, threshold, 1, cv2.THRESH_BINARY)[1]
     num_component, component = cv2.connectedComponents(mask.astype(np.uint8))
-    predictions = np.zeros((350, 525), np.float32) #Output size needed for this comp
+    predictions = np.zeros(size, np.float32) #Output size needed for this comp
     num = 0
     for c in range(1, num_component):
         p = (component == c)

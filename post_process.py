@@ -117,6 +117,7 @@ loaders['valid'] = valid_loader
 print("Learning threshold and min area")
 valid_masks = []
 LIMIT = 700
+size = (320, 480)
 probabilities = np.zeros((int(LIMIT*4), 320, 480)) #HARDCODED FOR NOW
 for i, (batch, output) in enumerate(tqdm.tqdm(zip(valid_dataset, runner.callbacks[0].predictions["logits"]))):
     if i >= LIMIT:
@@ -144,7 +145,8 @@ for class_id in range(4):
             masks = []
             for i in range(class_id, len(probabilities), 4):
                 probability = probabilities[i]
-                predict, num_predict = post_process(sigmoid(probability), t, ms)
+                predict, num_predict = post_process(sigmoid(probability), t,
+                                                        ms, size=size)
                 masks.append(predict)
 
             d = []
@@ -183,7 +185,8 @@ for phase in ['train', 'valid']:
                 probability = probability.cpu().detach().numpy()
                 # if probability.shape != (350, 525):
                 #     probability = cv2.resize(probability, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
-                predict, num_predict = post_process(sigmoid(probability), class_params[image_id % 4][0], class_params[image_id % 4][1])
+                predict, num_predict = post_process(sigmoid(probability),
+                            class_params[image_id % 4][0], class_params[image_id % 4][1], size=size)
                 running_dice += dice(predict, mask[j,:,:])/image_id
                 image_id += 1
     diceScore[phase] = running_dice
