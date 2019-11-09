@@ -2,9 +2,11 @@ import albumentations as albu
 
 def get_training_augmentation():
     train_transform = [
-        # albu.CLAHE(p=1),
-        albu.HorizontalFlip(),
-        albu.VerticalFlip(),
+        # albu.Resize(320, 480),
+        # albu.Resize(350, 525),
+        albu.CLAHE(p=1),
+        albu.HorizontalFlip(p=0.25),
+        albu.VerticalFlip(p=0.25),
         albu.ShiftScaleRotate(scale_limit=0.5, rotate_limit=0, shift_limit=0.1,
                                 p=0.5, border_mode=0),
         # albu.GridDistortion(p=0.5),
@@ -13,16 +15,12 @@ def get_training_augmentation():
     ]
     return albu.Compose(train_transform)
 
-
+# REMEMBER TO ADD FLIPS HERE
 def get_validation_augmentation():
     test_transform = [
-        albu.HorizontalFlip(),
-        albu.VerticalFlip(),
-        albu.ShiftScaleRotate(scale_limit=0.5, rotate_limit=0, shift_limit=0.1,
-                                p=0.5, border_mode=0),
         # albu.Resize(320, 480),
         # albu.Resize(350, 525),
-        # albu.CLAHE(p=1),
+        albu.CLAHE(p=1),
     ]
     return albu.Compose(test_transform)
 
@@ -43,9 +41,3 @@ def get_preprocessing(preprocessing_fn):
         albu.Lambda(image=to_tensor, mask=to_tensor),
     ]
     return albu.Compose(_transform)
-
-
-
-
-# for base_layer in model.layers[:-3]:
-#     base_layer.trainable = True

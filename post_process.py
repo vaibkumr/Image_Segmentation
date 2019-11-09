@@ -1,4 +1,4 @@
-load_params = True
+load_params = False
 
 import os
 import cv2

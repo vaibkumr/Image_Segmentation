@@ -133,9 +133,9 @@ if __name__ == "__main__":
 
     model.to(device)
     scheduler = ReduceLROnPlateau(optimizer, factor=0.6, patience=s_patience)
-    criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
+    # criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
     # scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
-    # criterion = BCEDiceLoss()
+    criterion = BCEDiceLoss(eps=1.)
     # criterion = DiceLoss(eps=1.) #Try this too
     runner = SupervisedRunner()
 
