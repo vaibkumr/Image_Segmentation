@@ -87,6 +87,18 @@ test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=False,
                             num_workers=num_workers)
 loaders = {"test": test_loader}
 
+runner = SupervisedRunner()
+encoded_pixels = []
+runner.infer(
+    model=model,
+    loaders=loaders,
+    callbacks=[
+        CheckpointCallback(
+            resume=model_path),
+        # InferCallback()
+    ],
+)
+
 encoded_pixels = []
 image_id = 0
 for i, test_batch in enumerate(tqdm.tqdm(loaders['test'])):
