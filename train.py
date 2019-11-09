@@ -52,6 +52,7 @@ from metric import BCEDiceLoss, DiceLoss, dice
 from utils import *
 
 device=torch.device('cuda')
+# device=torch.device('cpu')
 def seed_everything(seed=42):
     """
     42 is the answer to everything.

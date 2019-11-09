@@ -2,7 +2,7 @@ import os
 import cv2
 import collections
 import time
-from tqdm import tqdm
+from tqdm
 
 import numpy as np
 import pandas as pd
@@ -119,7 +119,7 @@ print("Learning threshold and min area")
 valid_masks = []
 LIMIT = 700
 probabilities = np.zeros((int(LIMIT*4), 350, 525)) #HARDCODED FOR NOW
-for i, (batch, output) in enumerate(tqdm(zip(valid_dataset, runner.callbacks[0].predictions["logits"]))):
+for i, (batch, output) in enumerate(tqdm.tqdm(zip(valid_dataset, runner.callbacks[0].predictions["logits"]))):
     if i >= LIMIT:
         break
     image, mask = batch
@@ -166,6 +166,8 @@ for class_id in range(4):
     best_size = attempts_df['size'].values[0]
 
     class_params[class_id] = (best_threshold, best_size)
+
+del probabilities
 
 with open(output_name+"_params.pkl", 'wb') as handle:
     pickle.dump(class_params, handle)
