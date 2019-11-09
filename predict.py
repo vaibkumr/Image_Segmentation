@@ -117,8 +117,11 @@ loaders['valid'] = valid_loader
 
 print("Learning threshold and min area")
 valid_masks = []
-probabilities = np.zeros((int(1387*4), 350, 525)) #HARDCODED FOR NOW
+LIMIT = 700
+probabilities = np.zeros((int(LIMIT*4), 350, 525)) #HARDCODED FOR NOW
 for i, (batch, output) in enumerate(tqdm(zip(valid_dataset, runner.callbacks[0].predictions["logits"]))):
+    if i >= LIMIT:
+        break
     image, mask = batch
     for m in mask:
         if m.shape != (350, 525):
