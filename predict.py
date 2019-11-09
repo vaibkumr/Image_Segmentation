@@ -132,7 +132,7 @@ for i, test_batch in enumerate(tqdm.tqdm(loaders['test'])):
         for probability in batch:
             probability = probability.cpu().detach().numpy()
             if probability.shape != (350, 525):
-                probability = cv2.resize(probability, dsize=size, interpolation=cv2.INTER_LINEAR)
+                probability = cv2.resize(probability, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
             predict, num_predict = post_process(sigmoid(probability),
                                                 class_params[image_id % 4][0],
                                                 class_params[image_id % 4][1],
@@ -156,3 +156,6 @@ print(f'{len(image_labels_empty.intersection(predictions_nonempty))} masks would
 
 sub.loc[sub['Image_Label'].isin(image_labels_empty), 'EncodedPixels'] = np.nan
 sub.to_csv(output_name+".csv", columns=['Image_Label', 'EncodedPixels'], index=False)
+
+
+# git fetch --all && git reset --hard origin/master
