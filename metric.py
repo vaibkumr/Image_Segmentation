@@ -1,7 +1,23 @@
 import torch
 import torch.nn as nn
 
-def dice(pr, gt, eps=1e-9, threshold=None, activation='sigmoid'):
+
+def dice(img1, img2):
+    """
+    Not differentiable so can't be used as a loss but only as a metric.
+    (This is Kaggle LB metric for satellite cloud in best of my knowledge)
+    """
+    img1 = np.asarray(img1).astype(np.bool)
+    img2 = np.asarray(img2).astype(np.bool)
+
+    intersection = np.logical_and(img1, img2)
+    if img1.sum() + img2.sum() == 0:
+        # Kaggle LB is not using a smooth dice.
+        return 1
+    else:
+        return 2. * intersection.sum() / (img1.sum() + img2.sum())
+
+def dice_loss(pr, gt, eps=1e-9, threshold=None, activation='sigmoid'):
     if activation is None or activation == "none":
         activation_fn = lambda x: x
     elif activation == "sigmoid":
@@ -25,6 +41,7 @@ def dice(pr, gt, eps=1e-9, threshold=None, activation='sigmoid'):
 
     score = (2.0 * intersection + eps) / (sum1 + sum2 + eps)
     return score
+
 
 def dice_kaggle(pr, gt, eps=1e-9, threshold=None, activation='sigmoid'):
     if activation is None or activation == "none":

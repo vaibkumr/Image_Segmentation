@@ -7,6 +7,8 @@ import time
 import os
 import tqdm as tqdm
 import segmentation_models_pytorch as smp
+import pickle
+
 
 # This place contains a lot of stolen code.
 
@@ -35,6 +37,36 @@ def seed_everything(seed=42):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
+
+
+
+def get_ids(train_ids_file='train_ids.pkl', valid_ids_file='valid_ids.pkl'):
+    with open(train_ids_file, 'rb') as handle:
+        train_ids = pickle.load(handle)
+
+    with open(valid_ids_file, 'rb') as handle:
+        valid_ids = pickle.load(handle)
+
+    return train_ids, valid_ids
+
+
+def post_process(probability, threshold, min_size):
+    """
+    Post processing of each predicted mask, components with lesser number of pixels
+    than `min_size` are ignored
+    """
+    # don't remember where I saw it
+    mask = cv2.threshold(probability, threshold, 1, cv2.THRESH_BINARY)[1]
+    num_component, component = cv2.connectedComponents(mask.astype(np.uint8))
+    predictions = np.zeros((350, 525), np.float32) #Output size needed for this comp
+    num = 0
+    for c in range(1, num_component):
+        p = (component == c)
+        if p.sum() > min_size:
+            predictions[p] = 1
+            num += 1
+    return predictions, num
+
 
 def rle_decode(mask_rle: str = "", shape: tuple = (1400, 2100)):
     """Source: https://www.kaggle.com/artgor/segmentation-in-pytorch-using-convenient-tools"""
@@ -67,7 +99,7 @@ def mask2rle(img):
     pixels = np.concatenate([[0], pixels, [0]])
     runs = np.where(pixels[1:] != pixels[:-1])[0] + 1
     runs[1::2] -= runs[::2]
-    return ' '.join(str(x) for x in runs)    
+    return ' '.join(str(x) for x in runs)
 
 def get_model(encoder='resnet18', type='unet',
                     encoder_weights = 'imagenet', classes=4):

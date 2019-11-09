@@ -2,7 +2,8 @@ import albumentations as albu
 
 def get_training_augmentation():
     train_transform = [
-        # albu.Resize(320, 640),
+        # albu.Resize(320, 480),
+        # albu.Resize(350, 525),
         albu.CLAHE(p=1),
         albu.HorizontalFlip(p=0.25),
         albu.VerticalFlip(p=0.25),
@@ -17,7 +18,8 @@ def get_training_augmentation():
 
 def get_validation_augmentation():
     test_transform = [
-        # albu.Resize(320, 640),
+        # albu.Resize(320, 480),
+        # albu.Resize(350, 525),
         albu.CLAHE(p=1),
     ]
     return albu.Compose(test_transform)

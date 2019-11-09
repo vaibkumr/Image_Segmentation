@@ -2,7 +2,7 @@ import os
 import cv2
 import collections
 import time
-import tqdm
+from tqdm import tqdm
 
 import numpy as np
 import pandas as pd
@@ -42,48 +42,36 @@ from augmentations import get_training_augmentation, get_preprocessing
 from augmentations import get_test_augmentation, get_validation_augmentation
 
 from utils import *
+from metric import dice
 import pickle
 
+def get_loaders(bs=32, num_workers=4, preprocessing_fn=None,
+            img_db="input/train_images_480/", mask_db="input/train_masks_480/",
+            npy=True):
+        train_ids, valid_ids = get_ids()
+        train_ids = train_ids[:100]
 
-def get_ids(train_ids_file='../train_ids.pkl', valid_ids_file='../valid_ids.pkl'):
-    with open(train_ids_file, 'rb') as handle:
-        train_ids = pickle.load(handle)
+        train_dataset = SegmentationDataset(ids=train_ids,
+                    transforms=get_training_augmentation(),
+                    preprocessing=get_preprocessing(preprocessing_fn),
+                    img_db=img_db,
+                    mask_db=mask_db, npy=npy)
+        valid_dataset = SegmentationDataset(ids=valid_ids,
+                    transforms=get_validation_augmentation(),
+                    preprocessing=get_preprocessing(preprocessing_fn),
+                    img_db=img_db,
+                    mask_db=mask_db, npy=npy)
 
-    with open(valid_ids_file, 'rb') as handle:
-        valid_ids = pickle.load(handle)
+        train_loader = DataLoader(train_dataset, batch_size=bs,
+            shuffle=True, num_workers=num_workers)
+        valid_loader = DataLoader(valid_dataset, batch_size=bs,
+            shuffle=False, num_workers=num_workers)
 
-    return train_ids, valid_ids
-
-def dice(img1, img2):
-    img1 = np.asarray(img1).astype(np.bool)
-    img2 = np.asarray(img2).astype(np.bool)
-
-    if img1.sum() + img2.sum() == 0:
-        print("ok...")
-        return 1
-
-    intersection = np.logical_and(img1, img2)
-
-    return 2. * intersection.sum() / (img1.sum() + img2.sum())
-
-
-def post_process(probability, threshold, min_size):
-    """
-    Post processing of each predicted mask, components with lesser number of pixels
-    than `min_size` are ignored
-    """
-    # don't remember where I saw it
-    mask = cv2.threshold(probability, threshold, 1, cv2.THRESH_BINARY)[1]
-    num_component, component = cv2.connectedComponents(mask.astype(np.uint8))
-    predictions = np.zeros((350, 525), np.float32)
-    num = 0
-    for c in range(1, num_component):
-        p = (component == c)
-        if p.sum() > min_size:
-            predictions[p] = 1
-            num += 1
-    return predictions, num
-
+        loaders = {
+            "train": train_loader,
+            "valid": valid_loader
+        }
+        return valid_dataset, loaders
 
 config = configparser.ConfigParser()
 config.read('configs/config.ini')
@@ -93,7 +81,7 @@ encoder = conf.get('encoder')
 
 logdir = f"./logs/{arch}_{encoder}"
 model_path = f"{logdir}/checkpoints/best.pth"
-output_name = f"{logdir}/{arch}_{encoder}"
+output_name = f"{logdir}/{arch}_{encoder}" #will be .pkl and .csv later
 
 train_ids, valid_ids = get_ids()
 
@@ -105,18 +93,12 @@ num_workers = 0
 # encoder = 'efficientnet-b4'
 # arch = 'linknet'
 model, preprocessing_fn = get_model(encoder, type=arch)
-loaders = get_loaders(bs, num_workers, preprocessing_fn)
+valid_dataset, loaders = get_loaders(bs, num_workers, preprocessing_fn)
 
-valid_dataset = SegmentationDataset(ids=valid_ids,
-                    transforms=get_validation_augmentation(),
-                    preprocessing=get_preprocessing(preprocessing_fn),
-                    img_db="../input/train_images_480/",
-                    mask_db="../input/train_masks_480/", npy=True)
+train_loader = loaders['train']
+valid_loader = loaders['valid']
 
-valid_loader = DataLoader(valid_dataset, batch_size=bs,
-            shuffle=False, num_workers=num_workers)
-
-
+print("Loading model")
 runner = SupervisedRunner()
 encoded_pixels = []
 loaders = {"infer": valid_loader}
@@ -129,13 +111,14 @@ runner.infer(
         InferCallback()
     ],
 )
+loaders['train'] = train_loader
+loaders['valid'] = valid_loader
 
-import tqdm
 
+print("Learning threshold and min area")
 valid_masks = []
-probabilities = np.zeros((int(555*4), 350, 525))
-for i, (batch, output) in enumerate(tqdm.tqdm(zip(
-        valid_dataset, runner.callbacks[0].predictions["logits"]))):
+probabilities = np.zeros((int(1387*4), 350, 525)) #HARDCODED FOR NOW
+for i, (batch, output) in enumerate(tqdm(zip(valid_dataset, runner.callbacks[0].predictions["logits"]))):
     image, mask = batch
     for m in mask:
         if m.shape != (350, 525):
@@ -151,9 +134,11 @@ class_params = {}
 for class_id in range(4):
     print(class_id)
     attempts = []
-    for t in tqdm.tqdm(range(0, 100, 5)):
+    # for t in tqdm.tqdm(range(0, 100, 5)):
+    for t in tqdm.tqdm(range(0, 10, 5)):
         t /= 100
-        for ms in [100, 5000, 10000, 15000, 20000, 22000, 25000]:
+        # for ms in [100, 5000, 10000, 15000, 20000, 22000, 25000]:
+        for ms in [100]:
             masks = []
             for i in range(class_id, len(probabilities), 4):
                 probability = probabilities[i]
@@ -179,14 +164,14 @@ for class_id in range(4):
 
     class_params[class_id] = (best_threshold, best_size)
 
-with open(output_name+".pkl", 'wb') as handle:
+with open(output_name+"_params.pkl", 'wb') as handle:
     pickle.dump(class_params, handle)
 
 import gc
 torch.cuda.empty_cache()
 gc.collect()
 
-sub = pd.read_csv(f'../input/sample_submission.csv')
+sub = pd.read_csv(f'input/sample_submission.csv')
 sub['label'] = sub['Image_Label'].apply(lambda x: x.split('_')[1])
 sub['im_id'] = sub['Image_Label'].apply(lambda x: x.split('_')[0])
 test_ids = sub['Image_Label'].apply(lambda x: x.split('_')[0]).drop_duplicates().values
@@ -195,10 +180,11 @@ test_ids = sub['Image_Label'].apply(lambda x: x.split('_')[0]).drop_duplicates()
 test_dataset = SegmentationDatasetTest(test_ids,
                                         transforms=get_test_augmentation(),
                                         preprocessing=get_preprocessing(preprocessing_fn),
-                                        img_db="../input/test_images_525/test_images_525")
+                                        img_db="input/test_images_525/test_images_525")
 
 test_loader = DataLoader(test_dataset, batch_size=8, shuffle=False, num_workers=0)
-loaders = {"test": test_loader}
+# loaders = {"test": test_loader}
+loaders['test'] = test_loader
 
 encoded_pixels = []
 image_id = 0
@@ -206,7 +192,6 @@ for i, test_batch in enumerate(tqdm.tqdm(loaders['test'])):
     runner_out = runner.predict_batch({"features": test_batch.cuda()})['logits']
     for i, batch in enumerate(runner_out):
         for probability in batch:
-
             probability = probability.cpu().detach().numpy()
             if probability.shape != (350, 525):
                 probability = cv2.resize(probability, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
@@ -218,15 +203,35 @@ for i, test_batch in enumerate(tqdm.tqdm(loaders['test'])):
                 encoded_pixels.append(r)
             image_id += 1
 
-sub['EncodedPixels'] = encoded_pixels
-# Classifer use
+# Calculate train/valid dice
+for phase in ['train', 'valid']:
+    running_dice = 0
+    image_id = 0
+    for i, test_batch in enumerate(tqdm.tqdm(loaders[phase])):
+        images, masks = test_batch
+        runner_out = runner.predict_batch({"features": images.cuda()})['logits']
+        for i, (mask, batch) in enumerate(zip(masks, runner_out)):
+            for j, probability in enumerate(batch):
+                probability = probability.cpu().detach().numpy()
+                if probability.shape != (350, 525):
+                    probability = cv2.resize(probability, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
+                predict, num_predict = post_process(sigmoid(probability), class_params[image_id % 4][0], class_params[image_id % 4][1])
+                running_dice += dice(predict, mask[j,:,:])/image_id
+                image_id += 1
+    diceScore[phase] = running_dice
 
+print(f"\n\nDicescore: {diceScore}\n\n")
+with open("train_test_loss.txt", 'w+') as handle:
+    text = f"Train: {diceScore['train']}\nTest: {diceScore['valid']}"
+    handle.write(text)
+
+sub['EncodedPixels'] = encoded_pixels
+
+# Use classifer
 import pickle
 with open('Data/list.pkl', 'rb') as handle:
     image_labels_empty = pickle.load(handle)
 predictions_nonempty = set(submission.loc[~submission['EncodedPixels'].isnull(), 'Image_Label'].values)
 print(f'{len(image_labels_empty.intersection(predictions_nonempty))} masks would be removed')
-
-
 
 sub.to_csv(output_name+".csv", columns=['Image_Label', 'EncodedPixels'], index=False)

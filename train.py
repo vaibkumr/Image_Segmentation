@@ -1,3 +1,5 @@
+use_wandb = False
+
 import os
 import cv2
 import collections
@@ -27,14 +29,17 @@ import albumentations as albu
 import configparser
 import argparse
 import pickle
-import wandb
+if use_wandb:
+    import wandb
 
 # Catalyst is amazing.
 from catalyst.data import Augmentor
 from catalyst.dl import utils
 from catalyst.data.reader import ImageReader, ScalarReader, ReaderCompose, LambdaReader
-# from catalyst.dl.runner import SupervisedRunner
-from catalyst.dl.runner import SupervisedWandbRunner as SupervisedRunner
+if use_wandb:
+    from catalyst.dl.runner import SupervisedWandbRunner as SupervisedRunner
+else:
+    from catalyst.dl.runner import SupervisedRunner
 from catalyst.contrib.models.segmentation import Unet
 from catalyst.dl.callbacks import DiceCallback, EarlyStoppingCallback, InferCallback, CheckpointCallback
 
@@ -43,8 +48,9 @@ import segmentation_models_pytorch as smp
 from dataloader import SegmentationDataset, SegmentationDatasetTest
 from augmentations import get_training_augmentation, get_validation_augmentation, get_preprocessing
 
-from metric import BCEDiceLoss, DiceLoss
+from metric import BCEDiceLoss, DiceLoss, dice
 from utils import *
+
 device=torch.device('cuda')
 def seed_everything(seed=42):
     """
@@ -58,43 +64,11 @@ def seed_everything(seed=42):
     torch.backends.cudnn.deterministic = True
 seed_everything(42)
 
-
-def dice(img1, img2):
-    """
-    Change this to each channel dice score later.
-    """
-    img1 = np.asarray(img1).astype(np.bool)
-    img2 = np.asarray(img2).astype(np.bool)
-
-    intersection = np.logical_and(img1, img2)
-    if img1.sum() + img2.sum() == 0:
-        return 1
-    else:
-        return 2. * intersection.sum() / (img1.sum() + img2.sum())
-
-def make_ids(csv_file="input/train.csv"):
-    train = pd.read_csv(csv_file)
-    train['label'] = train['Image_Label'].apply(lambda x: x.split('_')[1])
-    train['im_id'] = train['Image_Label'].apply(lambda x: x.split('_')[0])
-    id_mask_count = train.loc[train['EncodedPixels'].isnull() == False, 'Image_Label'].apply(lambda x: x.split('_')[0]).value_counts().\
-    reset_index().rename(columns={'index': 'img_id', 'Image_Label': 'count'})
-    train_ids, valid_ids = train_test_split(id_mask_count['img_id'].values,
-                random_state=42, stratify=id_mask_count['count'], test_size=0.1)
-    return train_ids, valid_ids
-
-def get_ids(train_ids_file='train_ids.pkl', valid_ids_file='valid_ids.pkl'):
-    with open(train_ids_file, 'rb') as handle:
-        train_ids = pickle.load(handle)
-
-    with open(valid_ids_file, 'rb') as handle:
-        valid_ids = pickle.load(handle)
-
-    return train_ids, valid_ids
-
 def get_loaders(bs=32, num_workers=4, preprocessing_fn=None,
-            img_db="input/train_images_640/", mask_db="input/train_masks_640/",
+            img_db="input/train_images_480/", mask_db="input/train_masks_480/",
             npy=True):
         train_ids, valid_ids = get_ids()
+        train_ids = train_ids[:100]
 
         train_dataset = SegmentationDataset(ids=train_ids,
                     transforms=get_training_augmentation(),
@@ -118,29 +92,26 @@ def get_loaders(bs=32, num_workers=4, preprocessing_fn=None,
         }
         return loaders
 
-
-
 if __name__ == "__main__":
+    start = time.time()
     parser = argparse.ArgumentParser()
-    parser.add_argument("--encoder", "-e", default="efficientnet-b2",
-                        help="encoder model name")
-    parser.add_argument("--arch", "-a", default="unet",
-                        help="architecture for segmentation")
+    parser.add_argument("--config", "-c", default="configs/config.ini",
+                        help="config file for training hyperparameters")
     parser.add_argument("--wandb", "-w", default="segmentation-phase2",
                         help="wandb project name")
     args = parser.parse_args()
-    # encoder = args.encoder
-    # arch = args.arch
     project = args.wandb
+    config_file = args.config
 
-    wandb.init(project=project)
+    if use_wandb:
+        wandb.init(project=project)
 
     config = configparser.ConfigParser()
-    config.read('configs/config.ini')
+    config.read(config_file)
     conf = config['DEFAULT']
 
-    lrd = conf.getfloat('lrd')
-    lre = conf.getfloat('lre')
+    lrd = conf.getfloat('lrd') #decoder lr
+    lre = conf.getfloat('lre') #encoder lr
     epochs = conf.getint('epochs')
     num_workers = conf.getint('num_workers')
     bs = conf.getint('bs')
@@ -151,7 +122,8 @@ if __name__ == "__main__":
     logdir = f"./logs/{arch}_{encoder}"
 
     model, preprocessing_fn = get_model(encoder, type=arch)
-    wandb.watch(model)
+    if use_wandb:
+        wandb.watch(model)
     loaders = get_loaders(bs, num_workers, preprocessing_fn)
 
     optimizer = torch.optim.Adam([
@@ -161,9 +133,9 @@ if __name__ == "__main__":
 
     model.to(device)
     scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=s_patience)
+    criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
     # scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
-    # criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
-    criterion = BCEDiceLoss()
+    # criterion = BCEDiceLoss()
     # criterion = DiceLoss(eps=1.) #Try this too
     runner = SupervisedRunner()
 
@@ -182,3 +154,5 @@ if __name__ == "__main__":
         num_epochs=epochs,
         verbose=True
     )
+    secs = time.time() - start
+    print(f"Done in {secs:.2f} seconds ({secs/3600:.2f} hours)")
