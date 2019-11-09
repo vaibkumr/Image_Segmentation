@@ -100,18 +100,19 @@ test_ids = sub['Image_Label'].apply(lambda x: x.split('_')[0]).drop_duplicates()
 
 # Load model, weird way in catalyst
 loaders = get_loaders()
+checkpoint = torch.load(model_path)
+model.load_state_dict(checkpoint['model_state_dict'])
 
 runner = SupervisedRunner()
-encoded_pixels = []
-runner.infer(
-    model=model,
-    loaders=loaders,
-    callbacks=[
-        CheckpointCallback(
-            resume=model_path),
-        InferCallback()
-    ],
-)
+# runner.infer(
+#     model=model,
+#     loaders=loaders,
+#     callbacks=[
+#         CheckpointCallback(
+#             resume=model_path),
+#         InferCallback()
+#     ],
+# )
 
 test_dataset = SegmentationDatasetTest(test_ids,
                                         transforms=get_test_augmentation(),

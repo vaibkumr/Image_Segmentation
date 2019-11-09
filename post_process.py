@@ -1,3 +1,5 @@
+load_params = True
+
 import os
 import cv2
 import collections
@@ -92,6 +94,7 @@ num_workers = 0
 # encoder = 'efficientnet-b4'
 # arch = 'linknet'
 model, preprocessing_fn = get_model(encoder, type=arch)
+
 valid_dataset, loaders = get_loaders(bs, num_workers, preprocessing_fn)
 
 train_loader = loaders['train']
@@ -114,62 +117,68 @@ loaders['train'] = train_loader
 loaders['valid'] = valid_loader
 
 
-print("Learning threshold and min area")
-valid_masks = []
-LIMIT = 800
-size = (320, 480)
-probabilities = np.zeros((int(LIMIT*4), 320, 480)) #HARDCODED FOR NOW
-for i, (batch, output) in enumerate(tqdm.tqdm(zip(valid_dataset, runner.callbacks[0].predictions["logits"]))):
-    if i >= LIMIT:
-        break
-    image, mask = batch
-    for m in mask:
-        # if m.shape != (350, 525):
-        #     m = cv2.resize(m, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
-        valid_masks.append(m)
-
-    for j, probability in enumerate(output):
-        # if probability.shape != (350, 525):
-        #     probability = cv2.resize(probability, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
-        probabilities[i * 4 + j, :, :] = probability
-
-class_params = {}
-for class_id in range(4):
-    print(class_id)
-    attempts = []
-    for t in tqdm.tqdm(range(20, 100, 5)):
-        t /= 100
-        for ms in [5000, 10000, 15000, 20000, 25000, 27000]:
-            masks = []
-            for i in range(class_id, len(probabilities), 4):
-                probability = probabilities[i]
-                predict, num_predict = post_process(sigmoid(probability), t,
-                                                        ms, size=size)
-                masks.append(predict)
-            d = []
-            for i, j in zip(masks, valid_masks[class_id::4]):
-                if (i.sum() == 0) & (j.sum() == 0):
-                    d.append(1)
-                else:
-                    d.append(dice(i, j))
-            attempts.append((t, ms, np.mean(d)))
-
-    attempts_df = pd.DataFrame(attempts, columns=['threshold', 'size', 'dice'])
 
 
-    attempts_df = attempts_df.sort_values('dice', ascending=False)
-    print(attempts_df.head())
-    best_threshold = attempts_df['threshold'].values[0]
-    best_size = attempts_df['size'].values[0]
+if load_params:
+    with open(output_name+"_params.pkl", 'rb') as handle:
+        class_params = pickle.load(handle)
+else:
+    print("Learning threshold and min area")
+    valid_masks = []
+    LIMIT = 800
+    size = (320, 480)
+    probabilities = np.zeros((int(LIMIT*4), 320, 480)) #HARDCODED FOR NOW
+    for i, (batch, output) in enumerate(tqdm.tqdm(zip(valid_dataset, runner.callbacks[0].predictions["logits"]))):
+        if i >= LIMIT:
+            break
+        image, mask = batch
+        for m in mask:
+            # if m.shape != (350, 525):
+            #     m = cv2.resize(m, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
+            valid_masks.append(m)
 
-    class_params[class_id] = (best_threshold, best_size)
+        for j, probability in enumerate(output):
+            # if probability.shape != (350, 525):
+            #     probability = cv2.resize(probability, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
+            probabilities[i * 4 + j, :, :] = probability
+    class_params = {}
+    for class_id in range(4):
+        print(class_id)
+        attempts = []
+        for t in tqdm.tqdm(range(20, 100, 5)):
+            t /= 100
+            for ms in [5000, 10000, 15000, 20000, 25000, 27000]:
+                masks = []
+                for i in range(class_id, len(probabilities), 4):
+                    probability = probabilities[i]
+                    predict, num_predict = post_process(sigmoid(probability), t,
+                                                            ms, size=size)
+                    masks.append(predict)
+                d = []
+                for i, j in zip(masks, valid_masks[class_id::4]):
+                    if (i.sum() == 0) & (j.sum() == 0):
+                        d.append(1)
+                    else:
+                        d.append(dice(i, j))
+                attempts.append((t, ms, np.mean(d)))
 
-del probabilities
+        attempts_df = pd.DataFrame(attempts, columns=['threshold', 'size', 'dice'])
 
-with open(output_name+"_params.pkl", 'wb') as handle:
-    pickle.dump(class_params, handle)
+
+        attempts_df = attempts_df.sort_values('dice', ascending=False)
+        print(attempts_df.head())
+        best_threshold = attempts_df['threshold'].values[0]
+        best_size = attempts_df['size'].values[0]
+
+        class_params[class_id] = (best_threshold, best_size)
+
+    del probabilities
+
+    with open(output_name+"_params.pkl", 'wb') as handle:
+        pickle.dump(class_params, handle)
 
 # Calculate train/valid dice
+diceScore = {}
 for phase in ['train', 'valid']:
     running_dice = 0
     image_id = 0
@@ -188,6 +197,6 @@ for phase in ['train', 'valid']:
     diceScore[phase] = running_dice/image_id
 
 print(f"\n\nDicescore: {diceScore}\n\n")
-with open(f"{logdir}/train_test_loss.txt", 'w+') as handle:
+with open(f"{logdir}/train_test_loss.txt", 'w') as handle:
     text = f"Train: {diceScore['train']}\nTest: {diceScore['valid']}"
     handle.write(text)
