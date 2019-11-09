@@ -49,7 +49,6 @@ def get_loaders(bs=32, num_workers=4, preprocessing_fn=None,
             img_db="input/train_images_480/", mask_db="input/train_masks_480/",
             npy=True):
         train_ids, valid_ids = get_ids()
-        train_ids = train_ids[:100]
 
         train_dataset = SegmentationDataset(ids=train_ids,
                     transforms=get_training_augmentation(),
@@ -118,19 +117,19 @@ loaders['valid'] = valid_loader
 print("Learning threshold and min area")
 valid_masks = []
 LIMIT = 700
-probabilities = np.zeros((int(LIMIT*4), 350, 525)) #HARDCODED FOR NOW
+probabilities = np.zeros((int(LIMIT*4), 320, 480)) #HARDCODED FOR NOW
 for i, (batch, output) in enumerate(tqdm.tqdm(zip(valid_dataset, runner.callbacks[0].predictions["logits"]))):
     if i >= LIMIT:
         break
     image, mask = batch
     for m in mask:
-        if m.shape != (350, 525):
-            m = cv2.resize(m, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
+        # if m.shape != (350, 525):
+        #     m = cv2.resize(m, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
         valid_masks.append(m)
 
     for j, probability in enumerate(output):
-        if probability.shape != (350, 525):
-            probability = cv2.resize(probability, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
+        # if probability.shape != (350, 525):
+        #     probability = cv2.resize(probability, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
         probabilities[i * 4 + j, :, :] = probability
 
 class_params = {}
@@ -182,8 +181,8 @@ for phase in ['train', 'valid']:
         for i, (mask, batch) in enumerate(zip(masks, runner_out)):
             for j, probability in enumerate(batch):
                 probability = probability.cpu().detach().numpy()
-                if probability.shape != (350, 525):
-                    probability = cv2.resize(probability, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
+                # if probability.shape != (350, 525):
+                #     probability = cv2.resize(probability, dsize=(525, 350), interpolation=cv2.INTER_LINEAR)
                 predict, num_predict = post_process(sigmoid(probability), class_params[image_id % 4][0], class_params[image_id % 4][1])
                 running_dice += dice(predict, mask[j,:,:])/image_id
                 image_id += 1
