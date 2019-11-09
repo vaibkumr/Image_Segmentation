@@ -26,7 +26,7 @@ def get_validation_augmentation():
 
 def get_test_augmentation():
     test_transform = [
-        albu.Resize(320, 640),
+        albu.Resize(320, 480),
         albu.CLAHE(p=1),
     ]
     return albu.Compose(test_transform)

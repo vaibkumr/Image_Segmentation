@@ -2,7 +2,7 @@ import os
 import cv2
 import collections
 import time
-from tqdm
+import tqdm
 
 import numpy as np
 import pandas as pd

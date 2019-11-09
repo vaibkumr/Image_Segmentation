@@ -1,4 +1,4 @@
-use_wandb = False
+use_wandb = True
 
 import os
 import cv2
@@ -69,7 +69,6 @@ def get_loaders(bs=32, num_workers=4, preprocessing_fn=None,
             img_db="input/train_images_480/", mask_db="input/train_masks_480/",
             npy=True):
         train_ids, valid_ids = get_ids()
-        train_ids = train_ids[:100]
 
         train_dataset = SegmentationDataset(ids=train_ids,
                     transforms=get_training_augmentation(),
@@ -133,7 +132,7 @@ if __name__ == "__main__":
     ])
 
     model.to(device)
-    scheduler = ReduceLROnPlateau(optimizer, factor=0.5, patience=s_patience)
+    scheduler = ReduceLROnPlateau(optimizer, factor=0.6, patience=s_patience)
     criterion = smp.utils.losses.BCEDiceLoss(eps=1.)
     # scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
     # criterion = BCEDiceLoss()
