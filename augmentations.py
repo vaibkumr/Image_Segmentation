@@ -4,7 +4,7 @@ def get_training_augmentation():
     train_transform = [
         # albu.Resize(320, 480),
         # albu.Resize(350, 525),
-        albu.CLAHE(p=1),
+        # albu.CLAHE(p=1),
         albu.HorizontalFlip(),
         albu.VerticalFlip(),
         albu.ShiftScaleRotate(scale_limit=0.5, rotate_limit=0, shift_limit=0.1,
@@ -22,14 +22,16 @@ def get_validation_augmentation():
         # albu.Resize(350, 525),
         albu.HorizontalFlip(),
         albu.VerticalFlip(),
-        albu.CLAHE(p=1),
+        albu.ShiftScaleRotate(scale_limit=0.5, rotate_limit=0, shift_limit=0.1,
+                                p=0.5, border_mode=0),
+        # albu.CLAHE(p=1),
     ]
     return albu.Compose(test_transform)
 
 def get_test_augmentation():
     test_transform = [
         albu.Resize(320, 480),
-        albu.CLAHE(p=1),
+        # albu.CLAHE(p=1),
     ]
     return albu.Compose(test_transform)
 

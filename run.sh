@@ -1,2 +1,3 @@
-python train.py
-python predict.py
+python train.py;
+python post_process.py;
+python predict.py;
