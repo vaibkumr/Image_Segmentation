@@ -129,6 +129,8 @@ test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=False,
 
 loaders = {"test": test_loader}
 
+# {0: (20, 25000), 1: (15, 27000), 2: (15, 27000), 3: (20, 20000)}
+
 encoded_pixels = []
 image_id = 0
 size = (350, 525) #Required output size by kaggle

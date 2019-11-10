@@ -156,3 +156,6 @@ if __name__ == "__main__":
     )
     secs = time.time() - start
     print(f"Done in {secs:.2f} seconds ({secs/3600:.2f} hours)")
+
+
+# git fetch --all && git reset --hard origin/master
