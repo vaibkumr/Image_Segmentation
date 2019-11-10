@@ -1,4 +1,5 @@
 load_params = False
+last = True
 
 import os
 import cv2
@@ -81,7 +82,10 @@ arch = conf.get('arch')
 encoder = conf.get('encoder')
 
 logdir = f"./logs/{arch}_{encoder}"
-model_path = f"{logdir}/checkpoints/best.pth"
+if last:
+    model_path = f"{logdir}/checkpoints/last.pth"
+else:
+    model_path = f"{logdir}/checkpoints/best.pth"
 output_name = f"{logdir}/{arch}_{encoder}" #will be .pkl and .csv later
 
 train_ids, valid_ids = get_ids()

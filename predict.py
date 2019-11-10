@@ -1,3 +1,5 @@
+last = True
+
 import os
 import cv2
 import collections
@@ -75,7 +77,10 @@ arch = conf.get('arch')
 encoder = conf.get('encoder')
 
 logdir = f"./logs/{arch}_{encoder}"
-model_path = f"{logdir}/checkpoints/best.pth"
+if last:
+    model_path = f"{logdir}/checkpoints/last.pth"
+else:
+    model_path = f"{logdir}/checkpoints/best.pth"
 output_name = f"{logdir}/{arch}_{encoder}" #will be .pkl and .csv later
 
 sigmoid = lambda x: 1 / (1 + np.exp(-x))
