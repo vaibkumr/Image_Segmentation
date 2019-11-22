@@ -1,6 +1,9 @@
 # Laplace's Demon
 Code for my solution of: https://www.kaggle.com/c/understanding_cloud_organization/overview
 
+
+All the important code are in py scripts. Don't waste time looking at the ipynb notebooks, they are just spurious experiments I did.
+
 Architectures tried:
 - Unet
 - FPNet
