@@ -150,7 +150,7 @@ pytorch-toolbelt==0.2.1
 pytz==2018.5
 pywal==3.1.0
 pywavelets==1.0.3
-pyyaml==5.1.1
+pyyaml==5.4
 pyzmq==18.0.2
 qtconsole==4.5.2
 reflector==0.1
