@@ -105,7 +105,7 @@ nltk==3.4.4
 notebook==6.0.0
 numba==0.45.0
 numexpr==2.7.0
-numpy==1.17.2
+numpy==1.22.0
 nvidia-ml-py3==7.352.0
 opencv-python==4.1.1.26
 packaging==19.0
