@@ -2,7 +2,7 @@ absl-py==0.7.1
 albumentations==0.3.3
 anaconda==0.0.1.1
 argh==0.26.2
-arrow==0.12.1
+arrow==0.15.1
 astor==0.8.0
 astroid==2.2.5
 astropy==3.2.1
