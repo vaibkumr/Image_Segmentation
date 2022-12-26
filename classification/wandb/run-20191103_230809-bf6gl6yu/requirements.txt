@@ -208,7 +208,7 @@ wcwidth==0.1.7
 web==0.0.1
 webencodings==0.5.1
 werkzeug==0.15.3
-wheel==0.31.1
+wheel==0.38.1
 widgetsnbextension==3.5.0
 wrapt==1.11.2
 youtube-dl==2019.9.1
